@@ -23,16 +23,21 @@ class GameObject:
         distance = self.position.distance_to(other_obj.position)
         return distance < self.radius + other_obj.radius
     
+    
 class Spaceship(GameObject):
     MANEUVERABILITY = 3
     ACCELERATION = 0.25
     BULLET_SPEED = 3
+    MAX_SPEED = 5
+
+    cur_speed = 0
 
     def __init__(self, position, create_bullet_callback):
         self.create_bullet_callback = create_bullet_callback
         self.laser_sound = load_sound("laser")
         # Make a copy of the original UP vector
         self.direction = Vector2(UP)
+        self.score = 0
 
         super().__init__(position, load_sprite("spaceship"), Vector2(0))
 
@@ -56,6 +61,12 @@ class Spaceship(GameObject):
         bullet = Bullet(self.position, bullet_velocity)
         self.create_bullet_callback(bullet)
         self.laser_sound.play()
+    
+    def update_score(self, points):
+        self.score += points
+
+    def get_score(self):
+        return self.score
 
 class Asteroid(GameObject):
     def __init__(self, position, create_asteroid_callback, size=3):

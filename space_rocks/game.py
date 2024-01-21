@@ -1,10 +1,16 @@
 import pygame
 
+from pygame.math import Vector2
 from models import Asteroid, Spaceship
 from utils import get_random_position, load_sprite, print_text
 
 class SpaceRocks:
     MIN_ASTEROID_DISTANCE = 250
+    ESCAPE_MESSAGE = "Press Escape to End!"
+    ANY_KEY_MESSAGE = "Press any key to restart!"
+
+    level = 1
+    cur_score = 0
 
     def __init__(self):
         self._init_pygame()
@@ -16,9 +22,11 @@ class SpaceRocks:
 
         self.asteroids = []
         self.bullets = []
+        
         self.spaceship = Spaceship((400, 300), self.bullets.append)
+        self.spaceship.score = self.cur_score
 
-        for _ in range(6):
+        for _ in range(self.level):
             while True:
                 position = get_random_position(self.screen)
                 if(
@@ -72,7 +80,8 @@ class SpaceRocks:
                 if asteroid.collides_with(self.spaceship):
                     self.spaceship = None
                     self.message = "You have been destroyed!!"
-                    break
+                    self._handle_game_over()
+                    return
 
         for bullet in self.bullets[:]:
             for asteroid in self.asteroids[:]:
@@ -80,6 +89,12 @@ class SpaceRocks:
                     self.asteroids.remove(asteroid)
                     self.bullets.remove(bullet)
                     asteroid.split()
+                    if asteroid.size == 3:
+                        Spaceship.update_score(self.spaceship, 50)
+                    elif asteroid.size == 2:
+                        Spaceship.update_score(self.spaceship, 100)
+                    elif asteroid.size == 1:
+                        Spaceship.update_score(self.spaceship, 150)
                     break
 
         for bullet in self.bullets[:]:
@@ -87,16 +102,45 @@ class SpaceRocks:
                 self.bullets.remove(bullet)
 
         if not self.asteroids and self.spaceship:
-            self.message = "You have destroyed all asteroids!!"
+            self.level += 1
+            self.cur_score = self.spaceship.score
+            self.__init__()
+            #self.message = "You have destroyed all asteroids!!"
+            #self._handle_game_over()
+
+    def _handle_game_over(self):
+        print_text(self.screen, self.message, self.font, y_offset=-50)
+        print_text(self.screen, self.ESCAPE_MESSAGE, self.font, y_offset=0)
+        print_text(self.screen, self.ANY_KEY_MESSAGE, self.font, y_offset=50)
+        pygame.display.flip()
+        
+        waiting_for_key = True
+        while waiting_for_key:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT or (
+                    event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
+                ):
+                    quit()
+                elif event.type == pygame.KEYDOWN:
+                    self.restart_game()
+                    waiting_for_key = False
+                    break
 
     def _draw(self):
         self.screen.blit(self.background, (0, 0))
         for game_object in self._get_game_objects():
             game_object.draw(self.screen)
 
-        if self.message:
-            print_text(self.screen, self.message, self.font)
+        if self.spaceship:
+            score_text = f"Score: {self.spaceship.get_score()}"
+            score_font = pygame.font.Font(None, 36)  # Adjust the font size as needed
+            score_surface = score_font.render(score_text, True, (255, 255, 255))
+            score_position = Vector2(10, 10)
+            self.screen.blit(score_surface, score_position)
 
+        if self.message:
+            print_text(self.screen, self.message, self.font, y_offset=0)
+           
         pygame.display.flip()
         self.clock.tick(60)
 
@@ -107,3 +151,21 @@ class SpaceRocks:
             game_objects.append(self.spaceship)
 
         return game_objects
+    
+    def restart_game(self):
+        self.asteroids = []
+        self.bullets = []
+        self.spaceship = Spaceship((400, 300), self.bullets.append)
+        self.level = 1
+
+        for _ in range(self.level):
+            while True:
+                position = get_random_position(self.screen)
+                if (
+                    position.distance_to(self.spaceship.position)
+                    > self.MIN_ASTEROID_DISTANCE
+                ):
+                    break
+
+            self.asteroids.append(Asteroid(position, self.asteroids.append))
+        self.message = ""
