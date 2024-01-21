@@ -28,7 +28,7 @@ class Spaceship(GameObject):
     MANEUVERABILITY = 3
     ACCELERATION = 0.25
     BULLET_SPEED = 3
-    MAX_SPEED = 5
+    MAX_SPEED = 3
 
     cur_speed = 0
 
@@ -55,6 +55,11 @@ class Spaceship(GameObject):
     
     def accelerate(self):
         self.velocity += self.direction * self.ACCELERATION
+
+        # Limit the speed of the spaceship using MAX_SPEED
+        current_speed = self.velocity.length()
+        if current_speed > self.MAX_SPEED:
+            self.velocity.scale_to_length(self.MAX_SPEED)
 
     def shoot(self):
         bullet_velocity = self.direction * self.BULLET_SPEED + self.velocity
