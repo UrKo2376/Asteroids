@@ -77,6 +77,7 @@ class Asteroid(GameObject):
     def __init__(self, position, create_asteroid_callback, size=3):
         self.create_asteroid_callback = create_asteroid_callback
         self.size = size
+        self.split_sound = load_sound("asteroid_explosion")
     
         size_to_scale = {
             3: 1,
@@ -91,6 +92,7 @@ class Asteroid(GameObject):
         )
 
     def split(self):
+        self.split_sound.play()
         if self.size > 1:
             for _ in range(2):
                 asteroid = Asteroid(
